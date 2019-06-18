@@ -98,6 +98,7 @@ export default defineMessages({
   importing_wallet_subtitle:
     'Please wait whilst we start the wallet import process. This should only take a moment.',
   backup_header: 'Backup Your Channels',
+  backup_import_header: 'Import Channel Backup',
   backup_type_local: 'Local',
   backup_type_dropbox: 'Dropbox',
   backup_type_gdrive: 'Google Drive',
