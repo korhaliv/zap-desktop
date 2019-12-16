@@ -233,8 +233,8 @@ const decorateChannel = (channelObj, nodes, closingChannelIds, loadingChannelPub
       // Calculate capacity as flow / capacity.
       return flow
         .dividedBy(CoinBig(capacity))
-        .decimalPlaces(2)
-        .toNumber()
+        .multipliedBy(100)
+        .toFixed(0)
     }
 
     return 0
@@ -837,8 +837,9 @@ const channelSortSelector = state => state.channels.sort
 const channelSortOrderSelector = state => state.channels.sortOrder
 const filterSelector = state => state.channels.filter
 const nodesSelector = state => networkSelectors.nodes(state)
-const viewModeSelector = createSelector(settingsSelectors.currentConfig, currentConfig =>
-  get(currentConfig, 'channels.viewMode')
+const viewModeSelector = createSelector(
+  settingsSelectors.currentConfig,
+  currentConfig => get(currentConfig, 'channels.viewMode')
 )
 
 channelsSelectors.viewMode = viewModeSelector
@@ -869,8 +870,9 @@ channelsSelectors.totalLimboBalance = createSelector(
   totalLimboBalance => totalLimboBalance
 )
 
-channelsSelectors.loadingChannelPubKeys = createSelector(loadingChannelsSelector, loadingChannels =>
-  loadingChannels.map(loadingChannel => loadingChannel.node_pubkey)
+channelsSelectors.loadingChannelPubKeys = createSelector(
+  loadingChannelsSelector,
+  loadingChannels => loadingChannels.map(loadingChannel => loadingChannel.node_pubkey)
 )
 
 channelsSelectors.loadingChannels = createSelector(
@@ -1111,35 +1113,38 @@ channelsSelectors.selectedChannel = createSelector(
   }
 )
 
-channelsSelectors.capacity = createSelector(channelsSelectors.allChannelsRaw, allChannels => {
-  let maxOneTimeSend = 0
-  let maxOneTimeReceive = 0
-  let send = 0
-  let receive = 0
+channelsSelectors.capacity = createSelector(
+  channelsSelectors.allChannelsRaw,
+  allChannels => {
+    let maxOneTimeSend = 0
+    let maxOneTimeReceive = 0
+    let send = 0
+    let receive = 0
 
-  allChannels.forEach(channel => {
-    const channelData = getChannelData(channel)
-    const local = CoinBig(get(channelData, 'local_balance', 0))
-    const remote = CoinBig(get(channelData, 'remote_balance', 0))
+    allChannels.forEach(channel => {
+      const channelData = getChannelData(channel)
+      const local = CoinBig(get(channelData, 'local_balance', 0))
+      const remote = CoinBig(get(channelData, 'remote_balance', 0))
 
-    if (local) {
-      send = CoinBig.sum(send, local)
-      maxOneTimeSend = CoinBig.max(maxOneTimeSend, local)
+      if (local) {
+        send = CoinBig.sum(send, local)
+        maxOneTimeSend = CoinBig.max(maxOneTimeSend, local)
+      }
+
+      if (remote) {
+        receive = CoinBig.sum(receive, remote)
+        maxOneTimeReceive = CoinBig.max(maxOneTimeReceive, remote)
+      }
+    })
+
+    return {
+      send: CoinBig(send).toString(),
+      receive: CoinBig(receive).toString(),
+      maxOneTimeReceive: CoinBig(maxOneTimeReceive).toString(),
+      maxOneTimeSend: CoinBig(maxOneTimeSend).toString(),
     }
-
-    if (remote) {
-      receive = CoinBig.sum(receive, remote)
-      maxOneTimeReceive = CoinBig.max(maxOneTimeReceive, remote)
-    }
-  })
-
-  return {
-    send: CoinBig(send).toString(),
-    receive: CoinBig(receive).toString(),
-    maxOneTimeReceive: CoinBig(maxOneTimeReceive).toString(),
-    maxOneTimeSend: CoinBig(maxOneTimeSend).toString(),
   }
-})
+)
 
 channelsSelectors.sendCapacity = createSelector(
   channelsSelectors.capacity,
@@ -1160,13 +1165,16 @@ channelsSelectors.maxOneTimeReceive = createSelector(
   capacity => capacity.maxOneTimeReceive
 )
 
-channelsSelectors.isCustomFilter = createSelector(filterSelector, filters => {
-  if (filters.size && filters.size !== defaultFilter.size) {
-    return true
+channelsSelectors.isCustomFilter = createSelector(
+  filterSelector,
+  filters => {
+    if (filters.size && filters.size !== defaultFilter.size) {
+      return true
+    }
+    const difference = new Set([...filters].filter(x => !defaultFilter.has(x)))
+    return difference.size > 0
   }
-  const difference = new Set([...filters].filter(x => !defaultFilter.has(x)))
-  return difference.size > 0
-})
+)
 
 export { channelsSelectors }
 
